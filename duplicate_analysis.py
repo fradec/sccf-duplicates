@@ -221,6 +221,8 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
         df_rule = df_rule[df_rule['EMAIL'] != ''].copy()
     if rule_key == 'H':
         df_rule = df_rule[df_rule['MOBILE'] != ''].copy()
+    if rule_key == 'I':
+        df_rule = df_rule[(df_rule['MOBILE'] != '') & (df_rule['HOME'] != '')].copy()
 
     if df_rule.empty:
         print(f'No records eligible for rule {rule_key}.')
