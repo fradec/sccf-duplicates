@@ -82,9 +82,10 @@ RULES = {
     'E':  { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer+Cvl x Adresse x Email" },
     'F': { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL', 'MOBILE'], 'name': "Foyer+Cvl x Adresse x Email x Mobile" },
     'G':{ 'cols': ['EMAIL'], 'name': "Email seul" },
-    'H':{ 'cols': ['MOBILE'], 'name': "Mobile seul" }
+    'H':{ 'cols': ['MOBILE'], 'name': "Mobile seul" },
+    'I':{ 'cols': ['MOBILE', 'HOME'], 'name': "Mobile et home phone"}
 }
-RULE_ORDER = ['A','B','C','D','E','F','G','H']
+RULE_ORDER = ['A','B','C','D','E','F','G','H','I']
 
 # ---------------- IO helpers ----------------
 def ensure_outdir():
@@ -127,11 +128,12 @@ def normalize_contacts_to_base(contacts_csv=CONTACTS_FILE, out_base=NORMALIZED_B
         chunk['CITY'] = chunk.get('MailingCity', '').apply(normalize_field_for_matching)
         chunk['EMAIL'] = chunk.get('Email', '').apply(normalize_email)
         chunk['MOBILE'] = chunk.get('MobilePhone', '').apply(normalize_phone_digits)
+        chunk['HOME'] = chunk.get('HomePhone', '').apply(normalize_phone_digits)
         chunk['SAL'] = chunk.get('Salutation', '').apply(lambda x: str(x).strip() if x is not None else '')
         # turn CreatedDate_parsed to ISO string or empty string
         chunk['CreatedDate_parsed'] = chunk['CreatedDate_parsed'].apply(lambda dt: dt.isoformat() if pd.notna(dt) else '')
         # ensure no NaN remain in normalized cols (make them empty strings)
-        norm_cols = ['LN','FN','ST1','ST2','ST3','ST4','PC','CITY','EMAIL','MOBILE','SAL','CreatedDate_parsed']
+        norm_cols = ['LN','FN','ST1','ST2','ST3','ST4','PC','CITY','EMAIL','MOBILE','HOME','SAL','CreatedDate_parsed']
         for c in norm_cols:
             if c not in chunk.columns:
                 chunk[c] = ''
@@ -331,7 +333,7 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
     if write_contacts:
         contacts_fname = f'{rule_key}_{dtok}_contacts.csv'
         # select columns useful for inspection
-        cols_to_write = ['Id','CreatedDate','CreatedDate_parsed','LN','FN','ST1','ST2','ST3','ST4','PC','CITY','EMAIL','MOBILE','SAL','match_key']
+        cols_to_write = ['Id','CreatedDate','CreatedDate_parsed','LN','FN','ST1','ST2','ST3','ST4','PC','CITY','EMAIL','MOBILE','HOME','SAL','match_key']
         df_rule.to_csv(os.path.join(OUT_DIR, contacts_fname), index=False)
 
     # if groups too large, write a file for review

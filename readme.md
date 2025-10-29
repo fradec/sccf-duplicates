@@ -50,6 +50,7 @@ La normalisation inclut :
 | `CITY`   | `MailingCity`            | Majuscules, accents supprimés                      |
 | `EMAIL`  | `Email`                  | Trim uniquement                                    |
 | `MOBILE` | `MobilePhone`            | Digits only                                        |
+| `HOME`   | `HomePhone`              | Digits only                                        |
 | `SAL`    | `Salutation`             | Trim                                               |
 
 
@@ -67,6 +68,7 @@ Chaque règle de matching compare les enregistrements sur un sous-ensemble de ch
 | **F** | Civilité + Nom + Adresse complète + Email + Mobile | `SAL`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`, `MOBILE` |
 | **G** | Email uniquement                                   | `EMAIL`                                                    |
 | **H** | Mobile uniquement                                  | `MOBILE`                                                   |
+| **I** | Mobile et home phone                               | `MOBILE`,`HOME`                                            |
 
 
 Le fichier `doublons.csv` est chargé en mémoire sous forme de dictionnaire `(Principal, Doublon) → Statut`.
