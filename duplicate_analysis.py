@@ -18,7 +18,6 @@ import os
 import sys
 import csv
 import itertools
-import json
 from collections import defaultdict, Counter
 from datetime import datetime, date
 
@@ -76,16 +75,16 @@ def normalize_phone_digits(val):
 
 # ---------------- rules ----------------
 RULES = {
-    'I':  { 'cols': ['LN', 'FN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Individu x Adresse (ST3+ST4+PC+City)" },
-    'II': { 'cols': ['LN', 'FN', 'ST3', 'PC', 'CITY'], 'name': "Individu x Adresse (sans Street4)" },
-    'III':{ 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Foyer x Adresse (nom foyer + adresse)" },
-    'IV': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer x Adresse x Email" },
-    'V':  { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer+Cvl x Adresse x Email" },
-    'VI': { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL', 'MOBILE'], 'name': "Foyer+Cvl x Adresse x Email x Mobile" },
-    'VII':{ 'cols': ['EMAIL'], 'name': "Email seul" },
-    'VIII':{ 'cols': ['MOBILE'], 'name': "Mobile seul" }
+    'A':  { 'cols': ['LN', 'FN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Individu x Adresse (ST3+ST4+PC+City)" },
+    'B': { 'cols': ['LN', 'FN', 'ST3', 'PC', 'CITY'], 'name': "Individu x Adresse (sans Street4)" },
+    'C':{ 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Foyer x Adresse (nom foyer + adresse)" },
+    'D': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer x Adresse x Email" },
+    'E':  { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer+Cvl x Adresse x Email" },
+    'F': { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL', 'MOBILE'], 'name': "Foyer+Cvl x Adresse x Email x Mobile" },
+    'G':{ 'cols': ['EMAIL'], 'name': "Email seul" },
+    'H':{ 'cols': ['MOBILE'], 'name': "Mobile seul" }
 }
-RULE_ORDER = ['I','II','III','IV','V','VI','VII','VIII']
+RULE_ORDER = ['A','B','C','D','E','F','G','H']
 
 # ---------------- IO helpers ----------------
 def ensure_outdir():
@@ -102,17 +101,6 @@ def write_csv(df, path, compress=False):
         return gz
     else:
         df.to_csv(path, index=False)
-        return path
-
-def write_json(obj, path, compress=False):
-    if compress:
-        gz = path + '.gz'
-        with gzip.open(gz, 'wt') as f:
-            json.dump(obj, f, ensure_ascii=False, indent=2)
-        return gz
-    else:
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(obj, f, ensure_ascii=False, indent=2)
         return path
 
 # ---------------- normalization ----------------
@@ -180,10 +168,19 @@ def build_match_key(row, cols):
     for c in cols:
         v = row.get(c, '')
         v = '' if v is None else str(v).strip()
-        if v == '':
-            return ''
-        parts.append(v)
-    return '||'.join(parts)
+        # treat literal 'NAN' (case-insensitive) as empty
+        if v.upper() == 'NAN' or v == '':
+            continue
+        # normalize and remove all spaces for compact key
+        try:
+            norm = remove_accents_and_upper(v).replace(' ', '')
+        except Exception:
+            norm = re.sub(r'\s+', '', v.upper())
+        if norm == '':
+            continue
+        parts.append(norm)
+    # join parts without delimiter to produce compact key
+    return ''.join(parts)
 
 def has_address(row):
     # address present if any ST1/ST2/ST3/ST4/PC/CITY non-empty
@@ -218,9 +215,9 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
     else:
         df_rule = df[df['match_key'] != ''].copy()
     # email/mobile only rules require presence
-    if rule_key == 'VII':
+    if rule_key == 'G':
         df_rule = df_rule[df_rule['EMAIL'] != ''].copy()
-    if rule_key == 'VIII':
+    if rule_key == 'H':
         df_rule = df_rule[df_rule['MOBILE'] != ''].copy()
 
     if df_rule.empty:
@@ -248,27 +245,44 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
             groups_too_large.append({'match_key': k, 'group_size': gsize})
             continue
         rows = g.to_dict('records')
-        for a, b in itertools.combinations(rows, 2):
-            da = a.get('CreatedDate_parsed', '')
-            db = b.get('CreatedDate_parsed', '')
+        # select single principal: oldest CreatedDate_parsed (tie-breaker: Id lexicographic)
+        def _get_time(r):
+            d = r.get('CreatedDate_parsed', '')
             try:
-                t_a = pd.to_datetime(da) if da != '' else pd.NaT
+                return pd.to_datetime(d) if d != '' else pd.NaT
             except Exception:
-                t_a = pd.NaT
-            try:
-                t_b = pd.to_datetime(db) if db != '' else pd.NaT
-            except Exception:
-                t_b = pd.NaT
-            if pd.isna(t_a) and pd.isna(t_b):
-                principal, doublon = (a, b) if a.get('Id','') <= b.get('Id','') else (b, a)
-            elif pd.isna(t_a):
-                principal, doublon = (b, a)
-            elif pd.isna(t_b):
-                principal, doublon = (a, b)
+                return pd.NaT
+        principal_row = None
+        principal_time = pd.NaT
+        for r in rows:
+            t = _get_time(r)
+            if principal_row is None:
+                principal_row = r
+                principal_time = t
+                continue
+            if pd.isna(principal_time) and pd.isna(t):
+                if r.get('Id', '') < principal_row.get('Id', ''):
+                    principal_row = r
+                    principal_time = t
+            elif pd.isna(principal_time):
+                principal_row = r
+                principal_time = t
+            elif pd.isna(t):
+                continue
             else:
-                principal, doublon = (a, b) if t_a <= t_b else (b, a)
-            pairs.append((principal.get('Id',''), doublon.get('Id',''), k, gsize,
-                          principal.get('CreatedDate_parsed',''), doublon.get('CreatedDate_parsed','')))
+                if t < principal_time:
+                    principal_row = r
+                    principal_time = t
+        # generate pairs principal -> others
+        pr_id = principal_row.get('Id', '')
+        pr_created = principal_row.get('CreatedDate_parsed', '')
+        for r in rows:
+            rid = r.get('Id', '')
+            if rid == pr_id:
+                continue
+            du_id = rid
+            du_created = r.get('CreatedDate_parsed', '')
+            pairs.append((pr_id, du_id, k, gsize, pr_created, du_created))
 
     n_pairs = len(pairs)
     already_declared = 0
@@ -340,7 +354,7 @@ def choose_rules_interactive():
     print('\nChoose one or multiple rules (comma separated), or ALL to run all rules:')
     for k in RULE_ORDER:
         print(f'  {k}: {RULES[k]["name"]}')
-    s = input('Rules (e.g. I,IV or ALL): ').strip()
+    s = input('Rules (e.g. A,E or ALL): ').strip()
     if s.upper() == 'ALL':
         return RULE_ORDER
     keys = [x.strip().upper() for x in s.split(',') if x.strip()]
