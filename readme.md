@@ -11,7 +11,7 @@ Il repose sur un processus en deux étapes :
 
 ## Setup
 
-You have to download your contacts from salesforce with this query:
+Télécharger les contacts depuis salesforce dans `contacts.csv`:
 
 ```SQL
 SELECT Id, CreatedDate, IdPersonne__c, AccountId, Salutation, FirstName, LastName, FirstNameSearchable__c, LastNameSearchable__c, MailingStreet1__c, MailingStreet2__c, MailingStreet3__c, MailingStreet4__c, MailingPostalCode, MailingCity, MailingCountry, HomePhone, MobilePhone, Email, Est_un_doublon__c, TECH_IsMerged__c, TECH_SFIdPrincipal__c, InformationDonateur__c, Sphere__c, TypeActeurs__c, IdSCCFContact__c, Statut__c
@@ -19,18 +19,13 @@ FROM Contact
 WHERE RecordType.DeveloperName = 'Acteurs'
 ```
 
-The file should have this name: `contacts.csv`
-
-Then you have to export Doublons potentiel:
+Télécharger les doublons potentiels depuis salesforce dans `doublons.csv`:
 ```SQL
 SELECT Id, CoherenceDesDoublons__c, CreatedDate, Statut__c, DateDeDernierTraitement__c, ContactPrincipal__c, ContactDoublon__c
 FROM Doublon_potentiel__c
 WHERE ContactPrincipal__c != null
 	AND ContactDoublon__c != null
 ```
-
-The file should have this name: `doublons.csv`
-
 
 
 ## Utilisation
@@ -81,8 +76,4 @@ Le fichier `doublons.csv` est chargé en mémoire sous forme de dictionnaire `(P
 
 ### Sorties générées
 
-Les fichiers sont produits automatiquement dans `./out` selon la convention :
-
-```
-<rule>_<YYYY_MM_DD>_<type>.csv
-```
+Les fichiers sont produits automatiquement dans `./out` selon la convention : `<rule>_<YYYY_MM_DD>_<type>.csv`
