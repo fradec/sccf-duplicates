@@ -57,16 +57,16 @@ La normalisation inclut :
 
 Chaque règle de matching compare les enregistrements sur un sous-ensemble de champs normalisés.
 
-| Règle    | Description                                        | Champs utilisés                                            |
-| -------- | -------------------------------------------------- | ---------------------------------------------------------- |
-| **I**    | Nom + Prénom + Adresse complète                    | `LN`, `FN`, `ST3`, `ST4`, `PC`, `CITY`                     |
-| **II**   | Nom + Prénom + Adresse partielle                   | `LN`, `FN`, `ST3`, `PC`, `CITY`                            |
-| **III**  | Nom + Adresse complète                             | `LN`, `ST3`, `ST4`, `PC`, `CITY`                           |
-| **IV**   | Nom + Adresse complète + Email                     | `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`                  |
-| **V**    | Civilité + Nom + Adresse complète + Email          | `SAL`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`           |
-| **VI**   | Civilité + Nom + Adresse complète + Email + Mobile | `SAL`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`, `MOBILE` |
-| **VII**  | Email uniquement                                   | `EMAIL`                                                    |
-| **VIII** | Mobile uniquement                                  | `MOBILE`                                                   |
+| Règle | Description                                        | Champs utilisés                                            |
+| ------| -------------------------------------------------- | ---------------------------------------------------------- |
+| **A** | Nom + Prénom + Adresse complète                    | `LN`, `FN`, `ST3`, `ST4`, `PC`, `CITY`                     |
+| **B** | Nom + Prénom + Adresse partielle                   | `LN`, `FN`, `ST3`, `PC`, `CITY`                            |
+| **C** | Nom + Adresse complète                             | `LN`, `ST3`, `ST4`, `PC`, `CITY`                           |
+| **D** | Nom + Adresse complète + Email                     | `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`                  |
+| **E** | Civilité + Nom + Adresse complète + Email          | `SAL`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`           |
+| **F** | Civilité + Nom + Adresse complète + Email + Mobile | `SAL`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`, `MOBILE` |
+| **G** | Email uniquement                                   | `EMAIL`                                                    |
+| **H** | Mobile uniquement                                  | `MOBILE`                                                   |
 
 
 Le fichier `doublons.csv` est chargé en mémoire sous forme de dictionnaire `(Principal, Doublon) → Statut`.
