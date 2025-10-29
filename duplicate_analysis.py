@@ -75,15 +75,15 @@ def normalize_phone_digits(val):
 
 # ---------------- rules ----------------
 RULES = {
-    'A':  { 'cols': ['LN', 'FN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Individu x Adresse (ST3+ST4+PC+City)" },
+    'A': { 'cols': ['LN', 'FN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Individu x Adresse (ST3+ST4+PC+City)" },
     'B': { 'cols': ['LN', 'FN', 'ST3', 'PC', 'CITY'], 'name': "Individu x Adresse (sans Street4)" },
-    'C':{ 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Foyer x Adresse (nom foyer + adresse)" },
+    'C': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Foyer x Adresse (nom foyer + adresse)" },
     'D': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer x Adresse x Email" },
-    'E':  { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer+Cvl x Adresse x Email" },
+    'E': { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer+Cvl x Adresse x Email" },
     'F': { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL', 'MOBILE'], 'name': "Foyer+Cvl x Adresse x Email x Mobile" },
-    'G':{ 'cols': ['EMAIL'], 'name': "Email seul" },
-    'H':{ 'cols': ['MOBILE'], 'name': "Mobile seul" },
-    'I':{ 'cols': ['MOBILE', 'HOME'], 'name': "Mobile et home phone"}
+    'G': { 'cols': ['EMAIL'], 'name': "Email seul" },
+    'H': { 'cols': ['MOBILE'], 'name': "Mobile seul" },
+    'I': { 'cols': ['MOBILE', 'HOME'], 'name': "Mobile et home phone"}
 }
 RULE_ORDER = ['A','B','C','D','E','F','G','H','I']
 
@@ -109,7 +109,7 @@ def normalize_contacts_to_base(contacts_csv=CONTACTS_FILE, out_base=NORMALIZED_B
     if not os.path.exists(contacts_csv):
         raise FileNotFoundError(f'contacts file not found: {contacts_csv}')
     # read in chunks, ensure empty stays empty (keep_default_na=False)
-    reader = pd.read_csv(contacts_csv, dtype=str, chunksize=chunk_size, keep_default_na=False, na_values=[''])
+    reader = pd.read_csv(contacts_csv, dtype=str, chunksize=chunk_size, keep_default_na=False)
     first = True
     written = 0
     for i, chunk in enumerate(reader):
