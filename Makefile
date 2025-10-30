@@ -24,5 +24,6 @@ clean:
 # ---- Aide ----
 help:
 	@echo "Commandes disponibles :"
-	@echo "  make                 -> Lancer le menu interactif"
-	@echo "  make clean           -> Supprimer le contenu du dossier 'out'"
+	@echo "  make         -> Lancer le menu interactif"
+	@echo "  make analyze -> Lancer l'analyse des nouvelles paires"
+	@echo "  make clean   -> Supprimer le contenu du dossier 'out'"

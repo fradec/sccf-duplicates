@@ -16,7 +16,7 @@ Télécharger les contacts depuis salesforce dans `contacts.csv`:
 ```SQL
 SELECT Id, CreatedDate, IdPersonne__c, AccountId, Salutation, FirstName, LastName, FirstNameSearchable__c, LastNameSearchable__c, MailingStreet1__c, MailingStreet2__c, MailingStreet3__c, MailingStreet4__c, MailingPostalCode, MailingCity, MailingCountry, HomePhone, MobilePhone, Email, Est_un_doublon__c, TECH_IsMerged__c, TECH_SFIdPrincipal__c, InformationDonateur__c, Sphere__c, TypeActeurs__c, IdSCCFContact__c, Statut__c
 FROM Contact
-WHERE RecordType.DeveloperName = 'Acteurs'
+WHERE RecordType.DeveloperName = 'Acteurs' AND IdPersonne__c LIKE 'P%'
 ```
 
 Télécharger les doublons potentiels depuis salesforce dans `doublons.csv`:
