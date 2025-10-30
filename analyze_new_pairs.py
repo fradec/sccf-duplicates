@@ -26,7 +26,7 @@ if not files:
 all_data = []
 
 for f in files:
-    # Déduction de la règle depuis le nom de fichier : <RULE>_YYYY_MM_DD_new_pairs.csv
+    # Déduction de la règle depuis le nom de fichier : <RULE>_new_pairs.csv
     rule_name = os.path.basename(f).split('_')[0]
     df = pd.read_csv(f, dtype=str, keep_default_na=False)
 
