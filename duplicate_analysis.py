@@ -375,9 +375,8 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
 
     # write outputs according to naming convention
     ensure_outdir()
-    dtok = date_token()
-    pairs_fname = f'{rule_key}_{dtok}_new_pairs.csv'
-    summary_fname = f'{rule_key}_{dtok}_summary.csv'
+    pairs_fname = f'{rule_key}_new_pairs.csv'
+    summary_fname = f'{rule_key}_summary.csv'
 
     if new_pairs:
         df_new = pd.DataFrame(new_pairs)
@@ -399,36 +398,44 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
     write_csv(pd.DataFrame([summary_obj]), os.path.join(OUT_DIR, summary_fname), compress=False)
     # optionally write contacts per rule (disabled by default)
     if write_contacts:
-        contacts_fname = f'{rule_key}_{dtok}_contacts.csv'
+        contacts_fname = f'{rule_key}_contacts.csv'
         # select columns useful for inspection
         cols_to_write = ['Id','CreatedDate','CreatedDate_parsed','LN','FN','ST1','ST2','ST3','ST4','PC','CITY','EMAIL','MOBILE','HOME','SAL','match_key']
         df_rule.to_csv(os.path.join(OUT_DIR, contacts_fname), index=False)
 
     # if groups too large, write a file for review
     if groups_too_large:
-        gfname = f'{rule_key}_{dtok}_groups_too_large.csv'
+        gfname = f'{rule_key}_groups_too_large.csv'
         write_csv(pd.DataFrame(groups_too_large), os.path.join(OUT_DIR, gfname), compress=False)
 
     return summary_obj
-
 # ---------------- interactive menu ----------------
 def print_main_menu():
     print('\n=== Menu ===')
     print('1) Préparation : normaliser les contacts')
     print('2) Jouer tout A : duplicate rule SF')
-    print('3) Jouer tout B : variantes individu)')
+    print('3) Jouer tout B : variantes individu')
     print('4) Jouer tout C : variantes foyer')
     print('5) Jouer A, B et C')
+    print('6) Afficher toutes les règles disponibles')
+    print('7) Lancer une ou plusieurs règles précises (ex : A1,B3,C2)')
     print('Q) Quitter')
     print('==============================')
 
+def print_all_rules():
+    print('\n=== Liste des règles disponibles ===')
+    for rk in RULE_ORDER:
+        r = RULES[rk]
+        print(f'{rk: <4} → {r["name"]}')
+    print('====================================\n')
+
 def run_rule_group(prefixes, args):
-    """Run all rules whose keys start with one of the given prefixes (A, B, C...)."""
+    """Exécute toutes les règles dont la clé commence par l'un des préfixes (A, B, C...)."""
     if not os.path.exists(NORMALIZED_BASE):
         print('Base normalisée introuvable. Veuillez exécuter d\'abord l\'option 1 (ou placer le fichier normalized_contacts.csv à côté du script).')
         return
     if not os.path.exists(DOUBLONS_FILE):
-        print(f'Fichier doublons manquant: {DOUBLONS_FILE}. Arrêt.')
+        print(f'Fichier doublons manquant : {DOUBLONS_FILE}. Arrêt.')
         return
 
     doublons_map = load_doublons()
@@ -447,14 +454,49 @@ def run_rule_group(prefixes, args):
             write_contacts=args.write_contacts,
             compress=False
         )
-        print(f'Rule {rk} summary: contacts={s["contacts"]} pairs={s["pairs"]} '
-              f'new_pairs={s["new_pairs"]} already_declared={s["already_declared"]}')
-    print('Done running selected rules.\n')
+        print(f'Règle {rk} : contacts={s["contacts"]}, paires={s["pairs"]}, '
+              f'nouvelles paires={s["new_pairs"]}, déjà déclarées={s["already_declared"]}')
+    print('Exécution terminée pour les règles sélectionnées.\n')
+
+def run_specific_rules(rule_keys_str, args):
+    """Exécute des règles spécifiques indiquées sous forme de liste séparée par des virgules."""
+    if not os.path.exists(NORMALIZED_BASE):
+        print('Base normalisée introuvable. Veuillez exécuter d\'abord l\'option 1.')
+        return
+    if not os.path.exists(DOUBLONS_FILE):
+        print(f'Fichier doublons manquant : {DOUBLONS_FILE}. Arrêt.')
+        return
+
+    keys = [k.strip().upper() for k in rule_keys_str.split(',') if k.strip()]
+    selected = [k for k in keys if k in RULES]
+    invalid = [k for k in keys if k not in RULES]
+
+    if invalid:
+        print(f"⚠️  Règle(s) inconnue(s) ignorée(s) : {', '.join(invalid)}")
+
+    if not selected:
+        print('Aucune règle valide à exécuter.')
+        return
+
+    doublons_map = load_doublons()
+    print(f"Lancement des règles : {', '.join(selected)}")
+    for rk in selected:
+        s = process_rule(
+            rk,
+            normalized_base=NORMALIZED_BASE,
+            doublons_map=doublons_map,
+            group_threshold=args.group_threshold,
+            write_contacts=args.write_contacts,
+            compress=False
+        )
+        print(f'Règle {rk} : contacts={s["contacts"]}, paires={s["pairs"]}, '
+              f'nouvelles paires={s["new_pairs"]}, déjà déclarées={s["already_declared"]}')
+    print('Exécution terminée pour les règles demandées.\n')
 
 def main_loop():
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--write-contacts', action='store_true', help='Write per-rule contacts files into out/')
-    parser.add_argument('--group-threshold', type=int, default=GROUP_THRESHOLD_DEFAULT, help='Group threshold')
+    parser.add_argument('--write-contacts', action='store_true', help='Écrit les fichiers de contacts par règle dans out/')
+    parser.add_argument('--group-threshold', type=int, default=GROUP_THRESHOLD_DEFAULT, help='Seuil de taille de groupe')
     args, _ = parser.parse_known_args()
 
     ensure_outdir()
@@ -486,6 +528,13 @@ def main_loop():
 
         elif choice == '5':
             run_rule_group(['A', 'B', 'C'], args)
+
+        elif choice == '6':
+            print_all_rules()
+
+        elif choice == '7':
+            rule_keys_str = input('Indique les règles à exécuter (séparées par des virgules) : ')
+            run_specific_rules(rule_keys_str, args)
 
         else:
             print('Choix invalide, réessaie.')
