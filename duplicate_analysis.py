@@ -75,17 +75,62 @@ def normalize_phone_digits(val):
 
 # ---------------- rules ----------------
 RULES = {
-    'A': { 'cols': ['LN', 'FN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Individu x Adresse (ST3+ST4+PC+City)" },
-    'B': { 'cols': ['LN', 'FN', 'ST3', 'PC', 'CITY'], 'name': "Individu x Adresse (sans Street4)" },
-    'C': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY'], 'name': "Foyer x Adresse (nom foyer + adresse)" },
-    'D': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer x Adresse x Email" },
-    'E': { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'], 'name': "Foyer+Cvl x Adresse x Email" },
-    'F': { 'cols': ['SAL', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL', 'MOBILE'], 'name': "Foyer+Cvl x Adresse x Email x Mobile" },
-    'G': { 'cols': ['EMAIL'], 'name': "Email seul" },
-    'H': { 'cols': ['MOBILE'], 'name': "Mobile seul" },
-    'I': { 'cols': ['MOBILE', 'HOME'], 'name': "Mobile et home phone"}
+    # --- A : based on SF duplicate rule ---
+    'A0': { 'cols': ['SAL', 'FN', 'LN', 'ST3', 'ST4', 'PC', 'CITY'],
+            'name': "Individu × Adresse suffisante" },
+    'A1': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY'],
+            'name': "Foyer × Adresse suffisante" },
+
+    # --- B : individual variants ---
+    'B0': { 'cols': ['SAL', 'FN', 'LN', 'ST1', 'ST2', 'ST3', 'ST4', 'PC', 'CITY'],
+            'name': "Individu × Adresse complète" },
+    'B1': { 'cols': ['SAL', 'FN', 'LN', 'ST3', 'PC', 'CITY'],
+            'name': "Individu × Adresse minimale" },
+    'B2': { 'cols': ['SAL', 'FN', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'],
+            'name': "Individu × Adresse suffisante × Email" },
+    'B3': { 'cols': ['SAL', 'FN', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'MOBILE'],
+            'name': "Individu × Adresse suffisante × Mobile" },
+    'B4': { 'cols': ['SAL', 'FN', 'LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL', 'MOBILE'],
+            'name': "Individu × Adresse suffisante × Email × Mobile" },
+    'B5': { 'cols': ['SAL', 'FN', 'LN', 'EMAIL'],
+            'name': "Individu × Email seul" },
+    'B6': { 'cols': ['SAL', 'FN', 'LN', 'MOBILE'],
+            'name': "Individu × Mobile seul" },
+    'B7': { 'cols': ['SAL', 'FN', 'LN', 'MOBILE', 'HOME'],
+            'name': "Individu × Mobile et Home phone" },
+    'B8': { 'cols': ['SAL', 'FN', 'LN', 'EMAIL', 'MOBILE'],
+            'name': "Individu × Email + Mobile" },
+    'B9': { 'cols': ['SAL', 'FN', 'LN', 'EMAIL', 'MOBILE', 'HOME'],
+            'name': "Individu × Email + Mobile + Home phone" },
+
+    # --- C : Household variants ---
+    'C0': { 'cols': ['LN', 'ST1', 'ST2', 'ST3', 'ST4', 'PC', 'CITY'],
+            'name': "Foyer × Adresse complète" },
+    'C1': { 'cols': ['LN', 'ST3', 'PC', 'CITY'],
+            'name': "Foyer × Adresse minimale" },
+    'C2': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL'],
+            'name': "Foyer × Adresse suffisante × Email" },
+    'C3': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY', 'MOBILE'],
+            'name': "Foyer × Adresse suffisante × Mobile" },
+    'C4': { 'cols': ['LN', 'ST3', 'ST4', 'PC', 'CITY', 'EMAIL', 'MOBILE'],
+            'name': "Foyer × Adresse suffisante × Email × Mobile" },
+    'C5': { 'cols': ['LN', 'EMAIL'],
+            'name': "Foyer × Email seul" },
+    'C6': { 'cols': ['LN', 'MOBILE'],
+            'name': "Foyer × Mobile seul" },
+    'C7': { 'cols': ['LN', 'MOBILE', 'HOME'],
+            'name': "Foyer × Mobile et Home phone" },
+    'C8': { 'cols': ['LN', 'EMAIL', 'MOBILE'],
+            'name': "Foyer × Email + Mobile" },
+    'C9': { 'cols': ['LN', 'EMAIL', 'MOBILE', 'HOME'],
+            'name': "Foyer × Email + Mobile + Home phone" }
 }
-RULE_ORDER = ['A','B','C','D','E','F','G','H','I']
+
+RULE_ORDER = [
+    'A0', 'A1',
+    'B0', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9',
+    'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'
+]
 
 # ---------------- IO helpers ----------------
 def ensure_outdir():
