@@ -413,23 +413,43 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
 
 # ---------------- interactive menu ----------------
 def print_main_menu():
-    print('\n=== Duplicate analysis menu ===')
-    print('1) Normalize contacts -> produce normalized_contacts.csv')
-    print('2) Run deduplication rules (choose which rules to run)')
-    print('3) Run all rules')
-    print('Q) Quit')
+    print('\n=== Menu ===')
+    print('1) Préparation : normaliser les contacts')
+    print('2) Jouer tout A : duplicate rule SF')
+    print('3) Jouer tout B : variantes individu)')
+    print('4) Jouer tout C : variantes foyer')
+    print('5) Jouer A, B et C')
+    print('Q) Quitter')
     print('==============================')
 
-def choose_rules_interactive():
-    print('\nChoose one or multiple rules (comma separated), or ALL to run all rules:')
-    for k in RULE_ORDER:
-        print(f'  {k}: {RULES[k]["name"]}')
-    s = input('Rules (e.g. A,E or ALL): ').strip()
-    if s.upper() == 'ALL':
-        return RULE_ORDER
-    keys = [x.strip().upper() for x in s.split(',') if x.strip()]
-    keys = [k for k in keys if k in RULES]
-    return keys
+def run_rule_group(prefixes, args):
+    """Run all rules whose keys start with one of the given prefixes (A, B, C...)."""
+    if not os.path.exists(NORMALIZED_BASE):
+        print('Base normalisée introuvable. Veuillez exécuter d\'abord l\'option 1 (ou placer le fichier normalized_contacts.csv à côté du script).')
+        return
+    if not os.path.exists(DOUBLONS_FILE):
+        print(f'Fichier doublons manquant: {DOUBLONS_FILE}. Arrêt.')
+        return
+
+    doublons_map = load_doublons()
+    selected = [rk for rk in RULE_ORDER if any(rk.startswith(p) for p in prefixes)]
+    if not selected:
+        print(f'Aucune règle trouvée pour les préfixes {prefixes}')
+        return
+
+    print(f"Lancement des règles : {', '.join(selected)}")
+    for rk in selected:
+        s = process_rule(
+            rk,
+            normalized_base=NORMALIZED_BASE,
+            doublons_map=doublons_map,
+            group_threshold=args.group_threshold,
+            write_contacts=args.write_contacts,
+            compress=False
+        )
+        print(f'Rule {rk} summary: contacts={s["contacts"]} pairs={s["pairs"]} '
+              f'new_pairs={s["new_pairs"]} already_declared={s["already_declared"]}')
+    print('Done running selected rules.\n')
 
 def main_loop():
     parser = argparse.ArgumentParser(add_help=False)
@@ -441,53 +461,35 @@ def main_loop():
 
     while True:
         print_main_menu()
-        choice = input('Choice: ').strip()
-        if choice.lower() == 'q':
-            print('Bye.')
+        choice = input('Choix : ').strip().lower()
+
+        if choice == 'q':
+            print('Au revoir.')
             break
-        if choice == '1':
-            # normalization
+
+        elif choice == '1':
             try:
-                print('Normalizing contacts...')
+                print('Normalisation des contacts...')
                 normalize_contacts_to_base()
-                print(f'Normalized base written to: {NORMALIZED_BASE}')
+                print(f'Base normalisée écrite dans : {NORMALIZED_BASE}')
             except FileNotFoundError as e:
-                print('ERROR:', e)
+                print('ERREUR :', e)
+
         elif choice == '2':
-            # run chosen rules
-            # check files exist
-            if not os.path.exists(NORMALIZED_BASE):
-                print('Normalized base not found. Please run option 1 first (or put normalized_contacts.csv next to script).')
-                continue
-            if not os.path.exists(DOUBLONS_FILE):
-                print(f'doublons source missing: {DOUBLONS_FILE}. Aborting rule run.')
-                continue
-            rules = choose_rules_interactive()
-            if not rules:
-                print('No valid rules selected.')
-                continue
-            doublons_map = load_doublons()
-            for rk in rules:
-                s = process_rule(rk, normalized_base=NORMALIZED_BASE, doublons_map=doublons_map,
-                                 group_threshold=args.group_threshold, write_contacts=args.write_contacts, compress=False)
-                print(f'Rule {rk} summary: contacts={s["contacts"]} pairs={s["pairs"]} new_pairs={s["new_pairs"]} already_declared={s["already_declared"]}')
-            print('Done running selected rules.')
+            run_rule_group(['A'], args)
+
         elif choice == '3':
-            # all rules
-            if not os.path.exists(NORMALIZED_BASE):
-                print('Normalized base not found. Please run option 1 first (or put normalized_contacts.csv next to script).')
-                continue
-            if not os.path.exists(DOUBLONS_FILE):
-                print(f'doublons source missing: {DOUBLONS_FILE}. Aborting rule run.')
-                continue
-            doublons_map = load_doublons()
-            for rk in RULE_ORDER:
-                s = process_rule(rk, normalized_base=NORMALIZED_BASE, doublons_map=doublons_map,
-                                 group_threshold=args.group_threshold, write_contacts=args.write_contacts, compress=False)
-                print(f'Rule {rk} summary: contacts={s["contacts"]} pairs={s["pairs"]} new_pairs={s["new_pairs"]} already_declared={s["already_declared"]}')
-            print('Done running all rules.')
+            run_rule_group(['B'], args)
+
+        elif choice == '4':
+            run_rule_group(['C'], args)
+
+        elif choice == '5':
+            run_rule_group(['A', 'B', 'C'], args)
+
         else:
-            print('Unknown choice, try again.')
+            print('Choix invalide, réessaie.')
+
 
 if __name__ == '__main__':
     main_loop()
