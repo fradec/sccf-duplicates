@@ -44,6 +44,8 @@ La normalisation inclut :
 | -------- | ------------------------ | -------------------------------------------------- |
 | `LN`     | `LastNameSearchable__c`  | Majuscules, accents supprimés, ponctuation retirée |
 | `FN`     | `FirstNameSearchable__c` | Idem                                               |
+| `ST1`    | `MailingStreet1__c`      | Idem                                               |
+| `ST2`    | `MailingStreet2__c`      | Idem                                               |
 | `ST3`    | `MailingStreet3__c`      | Idem                                               |
 | `ST4`    | `MailingStreet4__c`      | Idem                                               |
 | `PC`     | `MailingPostalCode`      | Trim                                               |
@@ -58,17 +60,30 @@ La normalisation inclut :
 
 Chaque règle de matching compare les enregistrements sur un sous-ensemble de champs normalisés.
 
-| Règle | Description                                        | Champs utilisés                                            |
-| ------| -------------------------------------------------- | ---------------------------------------------------------- |
-| **A** | Nom + Prénom + Adresse complète                    | `LN`, `FN`, `ST3`, `ST4`, `PC`, `CITY`                     |
-| **B** | Nom + Prénom + Adresse partielle                   | `LN`, `FN`, `ST3`, `PC`, `CITY`                            |
-| **C** | Nom + Adresse complète                             | `LN`, `ST3`, `ST4`, `PC`, `CITY`                           |
-| **D** | Nom + Adresse complète + Email                     | `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`                  |
-| **E** | Civilité + Nom + Adresse complète + Email          | `SAL`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`           |
-| **F** | Civilité + Nom + Adresse complète + Email + Mobile | `SAL`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`, `MOBILE` |
-| **G** | Email uniquement                                   | `EMAIL`                                                    |
-| **H** | Mobile uniquement                                  | `MOBILE`                                                   |
-| **I** | Mobile et home phone                               | `MOBILE`,`HOME`                                            |
+| Règle  | Description                                    | Champs utilisés                                                  |
+| ------ | ---------------------------------------------- | ---------------------------------------------------------------- |
+| **A0** | Individu × Adresse suffisante                  | `SAL`, `FN`, `LN`, `ST3`, `ST4`, `PC`, `CITY`                    |
+| **A1** | Foyer × Adresse suffisante                     | `LN`, `ST3`, `ST4`, `PC`, `CITY`                                 |
+| **B0** | Individu × Adresse complète                    | `SAL`, `FN`, `LN`, `ST1`, `ST2`, `ST3`, `ST4`, `PC`, `CITY`      |
+| **B1** | Individu × Adresse minimale                    | `SAL`, `FN`, `LN`, `ST3`, `PC`, `CITY`                           |
+| **B2** | Individu × Adresse suffisante × Email          | `SAL`, `FN`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`           |
+| **B3** | Individu × Adresse suffisante × Mobile         | `SAL`, `FN`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `MOBILE`          |
+| **B4** | Individu × Adresse suffisante × Email × Mobile | `SAL`, `FN`, `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`, `MOBILE` |
+| **B5** | Individu × Email seul                          | `SAL`, `FN`, `LN`, `EMAIL`                                       |
+| **B6** | Individu × Mobile seul                         | `SAL`, `FN`, `LN`, `MOBILE`                                      |
+| **B7** | Individu × Mobile et Home phone                | `SAL`, `FN`, `LN`, `MOBILE`, `HOME`                              |
+| **B8** | Individu × Email + Mobile                      | `SAL`, `FN`, `LN`, `EMAIL`, `MOBILE`                             |
+| **B9** | Individu × Email + Mobile + Home phone         | `SAL`, `FN`, `LN`, `EMAIL`, `MOBILE`, `HOME`                     |
+| **C0** | Foyer × Adresse complète                       | `LN`, `ST1`, `ST2`, `ST3`, `ST4`, `PC`, `CITY`                   |
+| **C1** | Foyer × Adresse minimale                       | `LN`, `ST3`, `PC`, `CITY`                                        |
+| **C2** | Foyer × Adresse suffisante × Email             | `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`                        |
+| **C3** | Foyer × Adresse suffisante × Mobile            | `LN`, `ST3`, `ST4`, `PC`, `CITY`, `MOBILE`                       |
+| **C4** | Foyer × Adresse suffisante × Email × Mobile    | `LN`, `ST3`, `ST4`, `PC`, `CITY`, `EMAIL`, `MOBILE`              |
+| **C5** | Foyer × Email seul                             | `LN`, `EMAIL`                                                    |
+| **C6** | Foyer × Mobile seul                            | `LN`, `MOBILE`                                                   |
+| **C7** | Foyer × Mobile et Home phone                   | `LN`, `MOBILE`, `HOME`                                           |
+| **C8** | Foyer × Email + Mobile                         | `LN`, `EMAIL`, `MOBILE`                                          |
+| **C9** | Foyer × Email + Mobile + Home phone            | `LN`, `EMAIL`, `MOBILE`, `HOME`                                  |
 
 
 Le fichier `doublons.csv` est chargé en mémoire sous forme de dictionnaire `(Principal, Doublon) → Statut`.
