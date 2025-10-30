@@ -194,6 +194,19 @@ def has_address(row):
             return True
     return False
 
+def has_email(row):
+    v = row.get('EMAIL', '')
+    return isinstance(v, str) and v.strip() != ''
+
+def has_mobile(row):
+    v = row.get('MOBILE', '')
+    return isinstance(v, str) and v.strip() != ''
+
+def has_home_phone(row):
+    v = row.get('HOME', '')
+    return isinstance(v, str) and v.strip() != ''
+
+
 # ---------------- rule processing ----------------
 def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
                  group_threshold=GROUP_THRESHOLD_DEFAULT, write_contacts=False, compress=False):
@@ -204,29 +217,38 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
     print(f'Running rule {rule_key}: {name}')
     df = pd.read_csv(normalized_base, dtype=str, keep_default_na=False)
     # ensure normalized cols exist
-    for c in ['LN','FN','ST1','ST2','ST3','ST4','PC','CITY','EMAIL','MOBILE','SAL','CreatedDate_parsed','Id']:
+    for c in ['LN','FN','ST1','ST2','ST3','ST4','PC','CITY','EMAIL','MOBILE','HOME','SAL','CreatedDate_parsed','Id']:
         if c not in df.columns:
             df[c] = ''
     # build match key
     df['match_key'] = df.apply(lambda r: build_match_key(r, cols), axis=1)
-    # if rule uses address elements, exclude rows with no address
-    address_rule = any(c in cols for c in ('ST1','ST2','ST3','ST4','PC','CITY'))
-    if address_rule:
-        df['has_address'] = df.apply(has_address, axis=1)
-        df_rule = df[(df['match_key'] != '') & (df['has_address'])].copy()
-    else:
-        df_rule = df[df['match_key'] != ''].copy()
-    # email/mobile only rules require presence
-    if rule_key == 'G':
-        df_rule = df_rule[df_rule['EMAIL'] != ''].copy()
-    if rule_key == 'H':
-        df_rule = df_rule[df_rule['MOBILE'] != ''].copy()
-    if rule_key == 'I':
-        df_rule = df_rule[(df_rule['MOBILE'] != '') & (df_rule['HOME'] != '')].copy()
 
+    # --- pre-filtering according to the types of data used by the rule ---
+    df_rule = df.copy()
+
+    # Si la règle inclut des éléments d'adresse, on exclut ceux sans adresse
+    if any(c in cols for c in ('ST1','ST2','ST3','ST4','PC','CITY')):
+        df_rule['has_address'] = df_rule.apply(has_address, axis=1)
+        df_rule = df_rule[df_rule['has_address']].copy()
+
+    # If the rule uses EMAIL
+    if 'EMAIL' in cols:
+        df_rule = df_rule[df_rule.apply(has_email, axis=1)].copy()
+
+    # If the rule uses MOBILE
+    if 'MOBILE' in cols:
+        df_rule = df_rule[df_rule.apply(has_mobile, axis=1)].copy()
+
+    # If the rule uses HOME
+    if 'HOME' in cols:
+        df_rule = df_rule[df_rule.apply(has_home_phone, axis=1)].copy()
+
+    # Exclude lines without a match key
+    df_rule = df_rule[df_rule['match_key'] != ''].copy()
+
+    # Nothing to do
     if df_rule.empty:
         print(f'No records eligible for rule {rule_key}.')
-        # write empty summary file
         summary = {
             'rule': rule_key, 'name': name, 'contacts': 0, 'pairs': 0,
             'already_declared': 0, 'new_pairs': 0, 'status_distribution': {}, 'groups_too_large': 0
@@ -277,7 +299,6 @@ def process_rule(rule_key, normalized_base=NORMALIZED_BASE, doublons_map=None,
                 if t < principal_time:
                     principal_row = r
                     principal_time = t
-        # generate pairs principal -> others
         pr_id = principal_row.get('Id', '')
         pr_created = principal_row.get('CreatedDate_parsed', '')
         for r in rows:
