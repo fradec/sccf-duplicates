@@ -211,23 +211,7 @@ def load_doublons(doublons_csv=DOUBLONS_FILE):
 
 # ---------------- matching helpers ----------------
 def build_match_key(row, cols):
-    parts = []
-    for c in cols:
-        v = row.get(c, '')
-        v = '' if v is None else str(v).strip()
-        # treat literal 'NAN' (case-insensitive) as empty
-        if v.upper() == 'NAN' or v == '':
-            continue
-        # normalize and remove all spaces for compact key
-        try:
-            norm = remove_accents_and_upper(v).replace(' ', '')
-        except Exception:
-            norm = re.sub(r'\s+', '', v.upper())
-        if norm == '':
-            continue
-        parts.append(norm)
-    # join parts without delimiter to produce compact key
-    return ''.join(parts)
+    return ''.join(row[c] for c in cols if row[c] != '')
 
 def has_address(row):
     # address present if any ST1/ST2/ST3/ST4/PC/CITY non-empty
