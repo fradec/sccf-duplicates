@@ -5,12 +5,13 @@ analyze_pairs.py
 Analyse des fichiers *_new_pairs.csv dans ./out/ :
 1) Comptage annuel des doublons par règle
 2) Croisement global des doublons (redondance inter-règles)
-3) Résumé du fichier cross_analysis.csv
+3) Résumé du fichier cross_analysis.csv (avec filtre optionnel sur le nombre minimal de règles)
 """
 
 import os
 import glob
 import pandas as pd
+import ast
 
 OUT_DIR = 'out'
 ANALYSIS_DIR = 'analysis'
@@ -99,8 +100,8 @@ def analyze_cross_rules():
     print(f"{len(grouped)} paires uniques consolidées.")
 
 
-def summarize_cross_analysis():
-    """Résumé global : volume annuel, % du total, et pondération par occurrences."""
+def summarize_cross_analysis(min_rules: int = 1):
+    """Résumé global : volume annuel, % du total, et pondération par occurrences, avec filtre sur le nombre minimal de règles."""
     cross_file = os.path.join(ANALYSIS_DIR, 'cross_analysis.csv')
     if not os.path.exists(cross_file):
         print("Fichier cross_analysis.csv introuvable. Lance d'abord l'option 2.")
@@ -110,6 +111,25 @@ def summarize_cross_analysis():
     if df.empty:
         print("Fichier vide.")
         return
+
+    # convertir la colonne 'Rules' en liste réelle (si présente sous forme de texte)
+    if 'Rules' in df.columns and isinstance(df.iloc[0]['Rules'], str):
+        try:
+            df['Rules'] = df['Rules'].apply(ast.literal_eval)
+        except Exception:
+            pass
+
+    # calculer le nombre de règles distinctes par ligne si pas présent
+    if 'Rules' in df.columns:
+        df['NbRules'] = df['Rules'].apply(lambda x: len(x) if isinstance(x, (list, set)) else 0)
+    else:
+        df['NbRules'] = df['Occurrences']
+
+    # appliquer le filtre
+    before = len(df)
+    df = df[df['NbRules'] >= min_rules]
+    after = len(df)
+    print(f"Filtre appliqué : paires avec au moins {min_rules} règle(s) ({after}/{before} conservées)")
 
     # Résumé par année
     summary = (
@@ -121,14 +141,11 @@ def summarize_cross_analysis():
         .reset_index()
     )
 
-    # Calcul du total global pour % du total
     total_pairs = summary['PairesUniques'].sum()
     summary['%Paires'] = (summary['PairesUniques'] / total_pairs * 100).round(2)
-
-    # On ajoute un indice de redondance moyen : occurrences / paires
     summary['RedondanceMoy'] = (summary['TotalOccurrences'] / summary['PairesUniques']).round(2)
 
-    out_csv = os.path.join(ANALYSIS_DIR, 'cross_summary.csv')
+    out_csv = os.path.join(ANALYSIS_DIR, f'cross_summary_min{min_rules}.csv')
     summary.to_csv(out_csv, index=False)
     print(f"Résumé global écrit dans : {out_csv}")
     print(summary.to_string(index=False))
@@ -138,7 +155,7 @@ def print_menu():
     print("\n=== Menu d'analyse ===")
     print("1) Comptage annuel des doublons par règle")
     print("2) Analyse croisée des doublons")
-    print("3) Résumé du fichier cross_analysis.csv")
+    print("3) Résumé du fichier cross_analysis.csv (avec filtre sur le nombre minimal de règles)")
     print("Q) Quitter")
     print("========================")
 
@@ -152,7 +169,9 @@ def main():
         elif choice == '2':
             analyze_cross_rules()
         elif choice == '3':
-            summarize_cross_analysis()
+            val = input("Nombre minimal de règles à considérer (par défaut = 1) : ").strip()
+            min_rules = int(val) if val.isdigit() else 1
+            summarize_cross_analysis(min_rules)
         elif choice == 'q':
             print("Au revoir.")
             break
