@@ -1,3 +1,5 @@
 *.csv
 out/*.*
 .DS_Store
+*.png
+analysis/*.*
