@@ -1,5 +1,6 @@
 # Nom du script principal
-SCRIPT := duplicate_analysis.py
+SCRIPT1 := duplicate_analysis.py
+SCRIPT2 := analyze_new_pairs.py
 PYTHON := python3
 OUT_DIR := out
 
@@ -8,7 +9,11 @@ default: menu
 
 # ---- Exécution principale ----
 menu:
-	@$(PYTHON) $(SCRIPT)
+	@$(PYTHON) $(SCRIPT1)
+
+# ---- Analyse des résultats ----
+analyze:
+	@$(PYTHON) $(SCRIPT2)
 
 # ---- Nettoyer le dossier de sortie ----
 clean:
